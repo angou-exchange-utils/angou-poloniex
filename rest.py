@@ -12,7 +12,6 @@ class RestSession:
         self.api_key = api_key
         self.api_secret = api_secret
 
-
     def request(self, command, params=None):
         params = params or {}
         params.udpate({
