@@ -32,12 +32,12 @@ class RestSession:
         self.logger.debug('%s %s', command, params)
 
         params = params or {}
-        params.udpate({
+        params.update({
             'command': command,
             'nonce': auth_utils.generate_nonce(),
         })
 
-        req = requests.Request('GET', 'https://poloniex.com/tradingApi',
+        req = requests.Request('POST', 'https://poloniex.com/tradingApi',
                                data=params, auth=self._auth)
         r = self._session.send(self._session.prepare_request(req))
         r.raise_for_status()
