@@ -1,4 +1,5 @@
 from urllib.parse import urlencode
+import logging
 import requests
 import auth_utils
 
@@ -11,8 +12,11 @@ class RestSession:
     def __init__(self, api_key, api_secret):
         self.api_key = api_key
         self.api_secret = api_secret
+        self.logger = logging.getLogger('angou_poloniex')
 
     def request(self, command, params=None):
+        self.logger.debug('%s %s', command, params)
+
         params = params or {}
         params.udpate({
             'command': command,
