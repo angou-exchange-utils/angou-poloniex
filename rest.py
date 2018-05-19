@@ -1,6 +1,6 @@
 import logging
 import requests
-import auth_utils
+from . import auth_utils
 
 
 class _PoloniexAuth(requests.auth.AuthBase):
