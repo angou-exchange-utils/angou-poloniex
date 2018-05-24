@@ -3,6 +3,9 @@ import requests
 from . import auth_utils
 
 
+LOGGER = logging.getLogger('angou_poloniex')
+
+
 class _PoloniexAuth(requests.auth.AuthBase):
     def __init__(self, api_key, api_secret):
         self.api_key = api_key
@@ -16,20 +19,44 @@ class _PoloniexAuth(requests.auth.AuthBase):
         return r
 
 
+class InvalidJSON(Exception):
+    pass
+
+
 class RestError(Exception):
     pass
 
 
 class RestSession:
-    def __init__(self, api_key, api_secret):
+    def __init__(self, api_key, api_secret, timeout=None):
         self.api_key = api_key
         self.api_secret = api_secret
+        self.timeout = timeout
         self._session = requests.Session()
         self._auth = _PoloniexAuth(api_key, api_secret)
-        self.logger = logging.getLogger('angou_poloniex')
 
-    def request(self, command, params=None):
-        self.logger.debug('%s %s', command, params)
+    @staticmethod
+    def _postprocess(r):
+        r.raise_for_status()
+        try:
+            resp = r.json()
+        except ValueError:
+            raise InvalidJSON()
+        if 'error' in resp:
+            raise RestError(str(resp['error']))
+        return resp
+
+    def call_public(self, command, params=None):
+        LOGGER.debug('GET %s %s', command, params)
+
+        params = params or {}
+        params['command'] = command
+
+        return self._postprocess(self._session.request(
+            'GET', 'https://poloniex.com/public', params=params, timeout=self.timeout))
+
+    def call_auth(self, command, params=None):
+        LOGGER.debug('POST %s %s', command, params)
 
         params = params or {}
         params.update({
@@ -37,12 +64,6 @@ class RestSession:
             'nonce': auth_utils.generate_nonce(),
         })
 
-        req = requests.Request('POST', 'https://poloniex.com/tradingApi',
-                               data=params, auth=self._auth)
-        r = self._session.send(self._session.prepare_request(req))
-        r.raise_for_status()
-        resp = r.json()
-
-        if 'error' in resp:
-            raise RestError(resp['error'])
-        return resp
+        return self._postprocess(self._session.request(
+            'POST', 'https://poloniex.com/tradingApi', data=params, auth=self._auth,
+            timeout=self.timeout))
