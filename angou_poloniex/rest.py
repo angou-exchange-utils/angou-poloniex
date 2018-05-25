@@ -3,7 +3,7 @@ import requests
 from . import auth_utils
 
 
-LOGGER = logging.getLogger('angou_poloniex')
+LOGGER = logging.getLogger(__name__)
 
 
 class _PoloniexAuth(requests.auth.AuthBase):
